@@ -23,7 +23,7 @@ jobs:
       - name: Install Obfuscator
         run: npm install javascript-obfuscator
 
-      - name: Obfuscate from local source file (Absolutely Stable)
+      - name: Obfuscate from local source file (Final Recommended)
         run: |
           node -e "
             const JavaScriptObfuscator = require('javascript-obfuscator');
@@ -46,20 +46,21 @@ jobs:
               process.exit(1);
             }
 
-            // --- 绝对稳定的基础混淆配置 ---
+            // --- 最终推荐配置 (平衡强度与性能) ---
             const obfuscationOptions = {
-                compact: true, // 压缩代码
-                controlFlowFlattening: false, // 【已禁用】
+                compact: true,
+                controlFlowFlattening: false, // 【已禁用】避免内存超限
                 deadCodeInjection: false, // 【已禁用】
-                stringArray: true, // 启用字符串数组
-                stringArrayEncoding: ['base64'], // 使用稳定的 base64 编码
+                stringArray: true,
+                stringArrayEncoding: ['rc4'], // 使用更强的 RC4 编码
                 stringArrayThreshold: 0.75,
                 renameGlobals: false, // 【已禁用】
-                identifierNamesGenerator: 'mangled', // 变量名混淆
-                numbersToExpressions: false, // 【已禁用】
-                splitStrings: false, // 【已禁用】
-                transformObjectKeys: false, // 【已禁用】
-                selfDefending: true, // 防调试
+                identifierNamesGenerator: 'mangled',
+                numbersToExpressions: true, // 【已启用】将数字转换为表达式
+                splitStrings: true, // 【已启用】分割字符串
+                splitStringsChunkLength: 5, // 缩短分块长度
+                transformObjectKeys: true, // 【已启用】混淆对象键
+                selfDefending: true, // 【已启用】
                 debugProtection: false
             };
 
@@ -77,6 +78,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit, the obfuscated file is already up-to-date."
           else
-            git commit -m "build: Generate and obfuscate worker script (absolutely stable)"
+            git commit -m "build: Final recommended obfuscation configuration"
             git push
           fi
