@@ -4,7 +4,7 @@ const fallbackAddress = 'tw.x9527.xyz';
 const fallbackPort = '443';
 const socks5Config = '';
 const directDomains = [
-    { name: "cloudflare.182682.xyz", domain: "cloudflare.182682.xyz" }, { name: "www.shopify.com", domain: "www.shopify.com" }, { name: "www.udacity.com", domain: "www.udacity.com" },
+    { name: "cloudflare.182682.xyz", domain: "cloudflare.182682.xyz" }, { name: "www.shopify.com"},
 ];
 const parsedSocks5Config = {};
 const isSocksEnabled = false;
@@ -52,7 +52,7 @@ async function handleSubscriptionRequest(request, uuid) {
     const finalLinks = [];
     const workerDomain = url.hostname;
 
-    const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
+    const nativeList = [{ ip: workerDomain, isp: '原' }];
     finalLinks.push(...generateLinksFromSource(nativeList, uuid, workerDomain));
 
     const domainList = directDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
@@ -69,7 +69,7 @@ async function handleSubscriptionRequest(request, uuid) {
     }
 
     if (finalLinks.length === 0) {
-        const errorRemark = "所有节点获取失败";
+        const errorRemark = "3";
         const errorLink = `vless://00000000-0000-0000-0000-000000000000@127.0.0.1:80?encryption=none&security=none&type=ws&host=error.com&path=%2F#${encodeURIComponent(errorRemark)}`;
         finalLinks.push(errorLink);
     }
@@ -87,7 +87,7 @@ function generateLinksFromSource(list, uuid, workerDomain) {
     const httpsPorts = [443];
     const httpPorts = [];
     const links = [];
-    const wsPath = encodeURIComponent('/?ed=2048');
+    const wsPath = encodeURIComponent('/?ed=2095');
     const proto = 'vless';
 
     list.forEach(item => {
@@ -179,7 +179,7 @@ async function fetchAndParseWetest(url) {
         const html = await response.text();
         const results = [];
         const rowRegex = /<tr[\s\S]*?<\/tr>/g;
-        const cellRegex = /<td data-label="1">(.+?)<\/td>[\s\S]*?<td data-label="优选地址">([\d.:a-fA-F]+)<\/td>/;
+        const cellRegex = /<td data-label="1">(.+?)<\/td>[\s\S]*?<td data-label="优">([\d.:a-fA-F]+)<\/td>/;
 
         let match;
         while ((match = rowRegex.exec(html)) !== null) {
@@ -242,7 +242,7 @@ async function fetchAndParseNewIPs() {
 
 function generateLinksFromNewIPs(list, uuid, workerDomain) {
     const links = [];
-    const wsPath = encodeURIComponent('/?ed=2048');
+    const wsPath = encodeURIComponent('/?ed=2095');
     const proto = 'vless';
 
     list.forEach(item => {
