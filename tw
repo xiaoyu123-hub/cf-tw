@@ -4,17 +4,13 @@ const fallbackAddress = 'tw.x9527.xyz';
 const fallbackPort = '443';
 const socks5Config = '';
 const directDomains = [
-    { name: "cloudflare.182682.xyz", domain: "cloudflare.182682.xyz" }, { name: "www.shopify.com"},
+    { name: "www.shopify.com"},
 ];
 const parsedSocks5Config = {};
 const isSocksEnabled = false;
 
-// --- [新增] ECH 功能配置 ---
-// 默认启用 ECH 功能
 let enableECH = true;  
-// 全局变量存储ECH调试信息
 let echDebugInfo = '';
-// -----------------------------
 
 const E_INVALID_DATA = atob('aW52YWxpZCBkYXRh');
 const E_INVALID_USER = atob('aW52YWxpZCB1c2Vy');
@@ -33,7 +29,6 @@ const ADDRESS_TYPE_IPV4 = 1;
 const ADDRESS_TYPE_URL = 2;
 const ADDRESS_TYPE_IPV6 = 3;
 
-// --- [新增] 获取 ECH 配置的核心函数 ---
 async function fetchECHConfig(domain) {
     if (!enableECH) {
         echDebugInfo = 'ECH功能已禁用';
@@ -44,7 +39,6 @@ async function fetchECHConfig(domain) {
     const debugSteps = [];
     
     try {
-        // 优先使用 Google DNS 查询 cloudflare-ech.com 的 ECH 配置
         debugSteps.push('尝试使用 Google DNS 查询 cloudflare-ech.com...');
         const echDomainUrl = `https://dns.google/resolve?name=cloudflare-ech.com&type=65`;
         const echResponse = await fetch(echDomainUrl, {
@@ -85,7 +79,6 @@ async function fetchECHConfig(domain) {
             }
         }
         
-        // 如果 cloudflare-ech.com 查询失败，尝试使用 Google DNS 查询目标域名的 HTTPS 记录
         debugSteps.push(`尝试使用 Google DNS 查询目标域名 ${domain}...`);
         const dohUrl = `https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=65`;
         const response = await fetch(dohUrl, {
@@ -112,7 +105,6 @@ async function fetchECHConfig(domain) {
             }
         }
         
-        // 如果 Google DNS 失败，尝试使用 Cloudflare DNS 作为备选
         debugSteps.push('尝试使用 Cloudflare DNS 作为备选...');
         const cfEchUrl = `https://cloudflare-dns.com/dns-query?name=cloudflare-ech.com&type=65`;
         const cfResponse = await fetch(cfEchUrl, {
@@ -176,15 +168,13 @@ async function handleSubscriptionRequest(request, uuid) {
     const finalLinks = [];
     const workerDomain = url.hostname;
 
-    // --- [新增] 获取 ECH 配置 ---
     let echConfig = null;
     if (enableECH) {
         echConfig = await fetchECHConfig(workerDomain);
     }
-    // ------------------------------
 
     const nativeList = [{ ip: workerDomain, isp: '原' }];
-    // 传递 echConfig 参数
+
     finalLinks.push(...generateLinksFromSource(nativeList, uuid, workerDomain, echConfig));
 
     const domainList = directDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
@@ -208,7 +198,6 @@ async function handleSubscriptionRequest(request, uuid) {
 
     const subscriptionContent = btoa(finalLinks.join('\n'));
     
-    // --- [新增] 添加 ECH 状态到响应头 ---
     const responseHeaders = { 
         'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
@@ -221,14 +210,12 @@ async function handleSubscriptionRequest(request, uuid) {
             responseHeaders['X-ECH-Config-Length'] = String(echConfig.length);
         }
     }
-    // ------------------------------------
 
     return new Response(subscriptionContent, {
         headers: responseHeaders,
     });
 }
 
-// --- [修改] 生成链接函数，添加 echConfig 参数 ---
 function generateLinksFromSource(list, uuid, workerDomain, echConfig = null) {
     const httpsPorts = [443];
     const httpPorts = [];
@@ -243,7 +230,7 @@ function generateLinksFromSource(list, uuid, workerDomain, echConfig = null) {
         httpsPorts.forEach(port => {
             const wsNodeName = `${nodeNameBase}-${port}-WS-TLS`;
             
-            let fp = 'randomized'; // 默认指纹
+            let fp = 'randomized';
             const wsParams = new URLSearchParams({ 
                 encryption: 'none', 
                 security: 'tls', 
@@ -254,13 +241,11 @@ function generateLinksFromSource(list, uuid, workerDomain, echConfig = null) {
                 path: wsPath 
             });
 
-            // --- [新增] 如果启用 ECH 且获取到配置，注入参数 ---
             if (enableECH && echConfig) {
                 wsParams.set('fp', 'chrome'); // ECH 必须使用 chrome 指纹
                 wsParams.set('alpn', 'h3,h2,http/1.1');
                 wsParams.set('ech', echConfig);
             }
-            // ----------------------------------------------
 
             links.push(`${proto}://${uuid}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
         });
@@ -279,7 +264,6 @@ function generateLinksFromSource(list, uuid, workerDomain, echConfig = null) {
     return links;
 }
 
-// --- [修改] 生成新IP链接函数，添加 echConfig 参数 ---
 function generateLinksFromNewIPs(list, uuid, workerDomain, echConfig = null) {
     const links = [];
     const wsPath = encodeURIComponent('/?ed=2095');
@@ -289,7 +273,7 @@ function generateLinksFromNewIPs(list, uuid, workerDomain, echConfig = null) {
         const nodeName = item.name;
         const safeIP = item.ip.includes(':') ? `[${item.ip}]` : item.ip;
 
-        let fp = 'randomized'; // 默认指纹
+        let fp = 'randomized';
         const params = {
             encryption: 'none',
             security: 'tls',
@@ -302,19 +286,16 @@ function generateLinksFromNewIPs(list, uuid, workerDomain, echConfig = null) {
 
         const wsParams = new URLSearchParams(params);
 
-        // --- [新增] 如果启用 ECH 且获取到配置，注入参数 ---
         if (enableECH && echConfig) {
             wsParams.set('fp', 'chrome');
             wsParams.set('alpn', 'h3,h2,http/1.1');
             wsParams.set('ech', echConfig);
         }
-        // ----------------------------------------------
 
         links.push(`${proto}://${uuid}@${safeIP}:${item.port}?${wsParams.toString()}#${encodeURIComponent(nodeName)}`);
     });
     return links;
 }
-// ------------------------------------------------------
 
 async function fetchDynamicIPs() {
     const v4Url1 = "https://www.wetest.vip/page/cloudflare/address_v4.html";
