@@ -48,7 +48,7 @@ jobs:
           }
 
           const obfuscationOptions = {
-              compact: true,                  # 保留压缩，但不破坏语法
+              compact: true,                  // 保留压缩，但不破坏语法
               controlFlowFlattening: false,
               controlFlowFlatteningThreshold: 0,
               deadCodeInjection: false,
@@ -60,13 +60,13 @@ jobs:
               stringArrayWrappersCount: 2,
               stringArrayWrappersChainedCalls: false,
               stringArrayWrappersParametersMaxCount: 3,
-              renameGlobals: false,           # 关键修改：关闭全局重命名（避免破坏export default）
-              identifierNamesGenerator: 'mangled',  # 调整：仅混淆局部标识符，不碰模块保留字
+              renameGlobals: false,           // 关键修改：关闭全局重命名（避免破坏export default）
+              identifierNamesGenerator: 'mangled',  // 调整：仅混淆局部标识符，不碰模块保留字
               identifierNamesCache: null,
               identifiersPrefix: '',
               renameProperties: false,
               renamePropertiesMode: 'safe',
-              ignoreImports: true,            # 关键新增：忽略导入标识符的混淆
+              ignoreImports: true,            // 关键新增：忽略导入标识符的混淆
               target: 'browser',
               numbersToExpressions: false,
               simplify: false,
