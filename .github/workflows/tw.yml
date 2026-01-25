@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - '**'  # 仅匹配分支推送，排除标签推送
+      - '**'
     paths:
       - 'tw'
 
@@ -36,19 +36,22 @@ jobs:
           const sourceFilePath = path.join(process.cwd(), sourceFileName);
 
           if (!fs.existsSync(sourceFilePath)) {
-            console.error('错误：在路径 \'' + sourceFilePath + '\' 未找到源文件。请确保您的仓库根目录有名为 \'tw\' 的文件。');
+            console.error('错误：未找到源文件 ' + sourceFilePath);
             process.exit(1);
           }
 
-          const originalCode = fs.readFileSync(sourceFilePath, 'utf8');
-
+          let originalCode = fs.readFileSync(sourceFilePath, 'utf8');
           if (!originalCode || originalCode.trim().length === 0) {
-            console.error('错误：源文件 ' + sourceFileName + ' 为空。');
+            console.error('错误：源文件为空');
             process.exit(1);
           }
+
+          // 关键修复1：预处理代码，将 window 替换为 self（适配 Cloudflare Worker 环境）
+          // 仅替换全局的 window 引用，避免误改局部变量
+          originalCode = originalCode.replace(/\bwindow\b/g, 'self');
 
           const obfuscationOptions = {
-              compact: true,                  // 保留压缩，但不破坏语法
+              compact: true,
               controlFlowFlattening: false,
               controlFlowFlatteningThreshold: 0,
               deadCodeInjection: false,
@@ -60,14 +63,14 @@ jobs:
               stringArrayWrappersCount: 2,
               stringArrayWrappersChainedCalls: false,
               stringArrayWrappersParametersMaxCount: 3,
-              renameGlobals: false,           // 关键修改：关闭全局重命名（避免破坏export default）
-              identifierNamesGenerator: 'mangled',  // 调整：仅混淆局部标识符，不碰模块保留字
+              renameGlobals: false,
+              identifierNamesGenerator: 'mangled',
               identifierNamesCache: null,
               identifiersPrefix: '',
               renameProperties: false,
               renamePropertiesMode: 'safe',
-              ignoreImports: true,            // 关键新增：忽略导入标识符的混淆
-              target: 'browser',
+              ignoreImports: true,
+              target: 'webworker', // 关键修复2：调整 target 为 webworker（适配 CFW）
               numbersToExpressions: false,
               simplify: false,
               splitStrings: true,
@@ -82,9 +85,8 @@ jobs:
           };
 
           const obfuscatedCode = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions).getObfuscatedCode();
-          
           fs.writeFileSync(path.join(process.cwd(), outputFileName), obfuscatedCode, 'utf8');
-          console.log('成功将 \'' + sourceFileName + '\' 混淆并保存至 \'' + outputFileName + '\'。');
+          console.log('成功混淆并保存至 ' + outputFileName);
           EOF
           node obfuscate.js
 
@@ -94,7 +96,7 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add '_worker.js'
           if git diff --staged --quiet; then
-            echo "No changes to commit, the obfuscated file is already up-to-date."
+            echo "无修改需要提交"
           else
             git commit -m "部署用这个"
             git push
