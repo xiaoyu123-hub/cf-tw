@@ -46,8 +46,7 @@ jobs:
             process.exit(1);
           }
 
-          // 关键修复1：预处理代码，将 window 替换为 self（适配 Cloudflare Worker 环境）
-          // 仅替换全局的 window 引用，避免误改局部变量
+          // 核心修复：将全局 window 替换为 CFW 兼容的 self
           originalCode = originalCode.replace(/\bwindow\b/g, 'self');
 
           const obfuscationOptions = {
@@ -70,7 +69,7 @@ jobs:
               renameProperties: false,
               renamePropertiesMode: 'safe',
               ignoreImports: true,
-              target: 'webworker', // 关键修复2：调整 target 为 webworker（适配 CFW）
+              target: 'service-worker', // 关键修正：改为合法值 service-worker（适配 CFW）
               numbersToExpressions: false,
               simplify: false,
               splitStrings: true,
