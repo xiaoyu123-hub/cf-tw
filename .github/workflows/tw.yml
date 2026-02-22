@@ -6,7 +6,7 @@ on:
     branches:
       - '**'  # 仅匹配分支推送，排除标签推送
     paths:
-      - 'ech-tw' # 仅当该源文件修改时触发
+      - '明文源吗' # 仅当该源文件修改时触发
   schedule: # 新增：每3小时自动运行一次（UTC时区）
     - cron: '0 */3 * * *'
 
@@ -56,11 +56,11 @@ jobs:
           const obfuscationOptions = {
               compact: true,
               controlFlowFlattening: true,
-              controlFlowFlatteningThreshold: 0.5,
-              deadCodeInjection: false,
+              controlFlowFlatteningThreshold: 0.75,
+              deadCodeInjection: true,
               stringArray: true,
               stringArrayEncoding: ['base64'],
-              stringArrayThreshold: 0.3,
+              stringArrayThreshold: 1.0,
               stringArrayRotate: true,
               stringArrayShuffle: true,
               stringArrayWrappersCount: 2,
